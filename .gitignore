@@ -16,7 +16,7 @@ sudoku.txt
 x64/
 build/
 bld/
-[Bb]in/
+# [Bb]in/
 [Oo]bj/
 
 
