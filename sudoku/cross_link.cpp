@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "cross_link.h"
+#include <iostream>
 
 void cross_link::build() {
     head->left = head->up = NULL;
@@ -30,17 +31,17 @@ void cross_link::build() {
 }
 
 cross_link::~cross_link() {
-    // TODO: solve ~cross_link
-    return;
     for (int i = 0; i < rownum; i++) {
         Cross p = rows[i];
         Cross a;
-        while (p != NULL) {
+        while (p) {
             a = p;
             p = p->right;
             delete a;
         }
     }
+    delete[] rows;
+    delete[] cols;
 }
 
 void cross_link::insert(int i, int j) {

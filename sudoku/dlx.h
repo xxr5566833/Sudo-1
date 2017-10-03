@@ -1,3 +1,7 @@
+#ifndef DLX_H_
+#define DLX_H_
+
+#include "cross_link.h"
 #pragma once
 class dlx
 {
@@ -37,3 +41,4 @@ private:
     void _deleteRestrict(int &stack_top, int &result_pos);
     bool _find(int stack_top, int result_pos, int N, int &n, void ResDealing(const int *Res));
 };
+#endif // !DLX_H_

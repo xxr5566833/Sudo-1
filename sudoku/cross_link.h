@@ -1,7 +1,7 @@
+#ifndef CROSS_LINK_H_
+#define CROSS_LINK_H_
+
 class cross_link {
-#ifndef NULL
-#define NULL 0
-#endif // !NULL
 public:
     typedef struct cross_node {
         cross_node *left;
@@ -39,3 +39,5 @@ private:
 
     void build();
 };
+
+#endif // !CROSS_LINK_H_
