@@ -117,7 +117,11 @@ bool solve(int *puzzle, int *solution) {
         }
     DLX.addRestrict(rstr_p, rstr);
     generateMatrix = new int*;
+<<<<<<< HEAD
     //*generateMatrix = new int[81];
+=======
+    // *generateMatrix = new int[81];
+>>>>>>> aaf2a0c93df20cc0c224d03fb506529bb8d0f56f
     bool findout = DLX.find(1, ResDealing_toMatrix);
     DLX.clearRestrict();
     if (findout)
