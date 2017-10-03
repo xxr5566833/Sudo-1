@@ -43,7 +43,7 @@ int computeDegree(int *Matrix) {
     return degree;
 }
 
-void raiseDegree(int *Matrix, int pick, int &degree) { // ÏÈÖÃÁãÔÙ¼ÆËã
+void raiseDegree(int *Matrix, int pick, int &degree) { // å…ˆç½®é›¶å†è®¡ç®—
     for (int j = pick / 9 * 9; j / 9 == pick / 9; ++j)
         if (!Matrix[j])degree += 2;
     for (int j = pick % 9; j < 81; j += 9)
@@ -117,7 +117,7 @@ bool solve(int *puzzle, int *solution) {
         }
     DLX.addRestrict(rstr_p, rstr);
     generateMatrix = new int*;
-    *generateMatrix = new int[81];
+    //*generateMatrix = new int[81];
     bool findout = DLX.find(1, ResDealing_toMatrix);
     DLX.clearRestrict();
     if (findout)
@@ -126,4 +126,56 @@ bool solve(int *puzzle, int *solution) {
     delete[] * generateMatrix;
     delete generateMatrix;
     return findout;
+}
+/*
+require: (number 1-10000) && (lower>=20 && upper<=55 &&	upper>=lower) && (result!=NULL)
+*/
+void generate(int number, int lower, int upper, bool unique, int  result[][81])
+{
+	//1.generate number sudo save to generateMatrix
+	generateMatrix = new int*[number];
+	DLX.find(number, ResDealing_toMatrix);
+	//2.for every matrix,generate sudo puzzle 
+	for (int i = 0; i < number; i++)
+	{
+		int *puzzle = generateMatrix[i];
+		bool flag[81];
+		//random notemptynum between 81-upper to 81-lower
+		int notemptynum = 81 - (rand() % (upper - lower) + lower);		
+		do {
+			//clear last find's some set
+			DLX.clearRestrict();								
+			int rstr[81][3] = { 0 };
+			int rstr_p = 0;
+			for (int i = 0; i < 81; i++)
+			{
+				flag[i] = false;
+			}
+			while(rstr_p<notemptynum)
+			{
+				int pick = rand() % 81;							
+				//random get a position not empty
+				if (!flag[pick]) {
+					rstr[rstr_p][0] = puzzle[pick];
+					rstr[rstr_p][1] = pick / 9 + 1;
+					rstr[rstr_p][2] = pick % 9 + 1;
+					++rstr_p;
+					flag[pick] = true;
+				}
+			}
+			DLX.addRestrict(rstr_p, rstr);
+		} while (unique && !DLX.find(2, NULL));
+		for (int j = 0; j < 81; j++)
+		{
+			result[i][j] = flag[j]? puzzle[j]:0;
+		}
+
+	}
+	for (int i = 0; i < number; i++) {
+		delete[]generateMatrix[i];
+	}
+	delete[]generateMatrix;
+
+
+
 }
