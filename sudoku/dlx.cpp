@@ -3,7 +3,12 @@
 #include "dlx.h"
 #include <iostream>
 #include <fstream>
+#include <random>
+#include <algorithm>
+#include <chrono>
 
+
+static bool withRandom;
 
 dlx::dlx()
 {
@@ -55,9 +60,9 @@ void dlx::_deleteRestrict(int & stack_top, int & result_pos)
     }
 }
 
-bool dlx::find(int N, void ResDealing(const int *Res))
+bool dlx::find(int N, bool random, void ResDealing(const int *Res))
 {
-
+    withRandom = random;
     int stack_top = 0;
     int result_pos = _restrict_point;
     _deleteRestrict(stack_top, result_pos);
@@ -91,6 +96,7 @@ bool dlx::_find(int stack_top, int result_pos, int N, int & n, void ResDealing(c
     }
     int min_col_count = 100;
     int min_col_index = -1;
+
     for (Cross p = head->right; p != NULL; p = p->right) {
         if (min_col_count > p->count) {
             min_col_count = p->count;
@@ -98,8 +104,17 @@ bool dlx::_find(int stack_top, int result_pos, int N, int & n, void ResDealing(c
         }
     }
 
+    Cross *crossPtr = new Cross[min_col_count];
+    int i = 0;
+    for (Cross a = cols[min_col_index]->down; a; a = a->down)
+        crossPtr[i++] = a;
 
-    for (Cross a = cols[min_col_index]->down; a != NULL; a = a->down) {
+    if (withRandom)
+        shuffle(crossPtr, crossPtr + min_col_count, 
+            std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count()));
+
+    for (int i = 0; i < min_col_count; i++) {
+        Cross a = crossPtr[i];
         result[result_pos++] = a->row;
         int new_stack_top = stack_top;
         for (Cross b = rows[a->row]->right; b != NULL; b = b->right) {
@@ -110,8 +125,10 @@ bool dlx::_find(int stack_top, int result_pos, int N, int & n, void ResDealing(c
             A->delcol(b->col);
             stack[new_stack_top++] = -b->col;
         }
-        if (_find(new_stack_top, result_pos, N, n, ResDealing))
+        if (_find(new_stack_top, result_pos, N, n, ResDealing)) {
+            delete[] crossPtr;
             return true;
+        }
         for (int i = new_stack_top - 1; i >= stack_top; i--) {
             if (stack[i] > 0)
                 A->recoverrow(stack[i]);
@@ -120,6 +137,6 @@ bool dlx::_find(int stack_top, int result_pos, int N, int & n, void ResDealing(c
         }
         result_pos--;
     }
+    delete[] crossPtr;
     return false;
-
 }

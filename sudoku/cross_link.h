@@ -25,7 +25,6 @@ public:
         build();
     }
     ~cross_link();
-    // Cross getHead() { return head; }
     void insert(int i, int j);
     void delrow(int r);
     void delcol(int c);

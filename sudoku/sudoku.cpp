@@ -26,9 +26,12 @@ void toFile(const int *Res) {
     fout << buf;
 }
 
+
+
 int main(int argc, char * args[]) {
     int result[20][81];
-    generate(20, 2, result);
+    generate(10, 1, result);
+    generate(10, 1, result + 10);
     for (int i = 0; i < 20; i++) {
         for (int j = 0; j < 81; j++) {
             if (result[i][j]) cout << result[i][j] << ' ';

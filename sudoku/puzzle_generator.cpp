@@ -10,11 +10,13 @@
 
 using namespace std;
 
+
+
+dlx DLX;
 int **generateMatrix;
-//为了能在测试中使用，这里把static去掉了，不知道有什么影响。。
- dlx DLX;
- //为了能修改count  这里把它放在外面了，否则下一次调用时count不是从0开始了
+ //为了能在测试中使用，这里把static去掉了，不知道有什么影响。。
 static int matrixcount = 0;
+//为了能修改count  这里把它放在外面了，否则下一次调用时count不是从0开始了
 
 void ResDealing_toMatrix(const int *Res) {
     generateMatrix[matrixcount] = new int[81];
@@ -76,8 +78,9 @@ void generate(int number, int mode, int result[][81]) {
     const int START[3] = { 20, 30, 40 };
     const int DEGREE[3] = { rand() % 200 + 100, rand() % 200 + 300, rand() % 200 + 500 };
     generateMatrix = new int*[number];
-    DLX.find(number, ResDealing_toMatrix);
+    matrixcount = 0;
     for (int i = 0; i < number; i++) {
+        DLX.find(1, true, ResDealing_toMatrix);
         int x = 0;
         while (x < START[mode]) {
             int pick = rand() % 81;
@@ -93,15 +96,7 @@ void generate(int number, int mode, int result[][81]) {
             while (!generateMatrix[i][pick]);
             generateMatrix[i][pick] = 0;
             raiseDegree(generateMatrix[i], pick, degree);
-            // assert(degree == computeDegree(generateMatrix[i]));
         }
-        /*
-        // print result
-        int spaceCount = 0;
-        for (int j = 0; j < 81; j++)if (!generateMatrix[i][j])spaceCount++;
-        cout << "mode: " << mode + 1 << " degree: " << degree << " space count: " << spaceCount << endl;
-        showM(generateMatrix[i]);
-        */
         for (int j = 0; j < 81; j++)
             result[i][j] = generateMatrix[i][j];
     }
@@ -122,9 +117,7 @@ bool solve(int *puzzle, int *solution) {
         }
     DLX.addRestrict(rstr_p, rstr);
     generateMatrix = new int*;
-    //*generateMatrix = new int[81];
-    // *generateMatrix = new int[81];
-    bool findout = DLX.find(1, ResDealing_toMatrix);
+    bool findout = DLX.find(1, false, ResDealing_toMatrix);
     DLX.clearRestrict();
     if (findout)
         for (int i = 0; i < 81; i++)
@@ -138,6 +131,7 @@ void getRandomArray(int num, int array[])
 {
 	int i = 0;
 	int temp[9] = { 1,2,3,4,5,6,7,8,9 };
+    std::random_device rand;
 	while (num > 0)
 	{
 		//srand(time(0));
@@ -166,7 +160,7 @@ bool judgeResult(int  puzzle[], bool flag[], bool unique)
 	DLX.addRestrict(rstr_p, rstr);
 	if (unique)
 	{
-		result = !DLX.find(2, NULL);
+		result = !DLX.find(2, false, NULL);
 	}
 	DLX.clearRestrict();
 	return result;
@@ -228,22 +222,23 @@ void generate(int number, int lower, int upper, bool unique, int  result[][81])
 	//1.generate number sudo save to generateMatrix
 	generateMatrix = new int*[number];
 	matrixcount = 0;
-	DLX.find(number, ResDealing_toMatrix);
+	
 	//2.for every matrix,generate sudo puzzle 
+    std::random_device rand;
 	for (int i = 0; i < number; i++)
 	{
+        DLX.find(1, true, ResDealing_toMatrix);
 		int *puzzle = generateMatrix[i];
 		bool flag[81];
 		for (int i = 0; i < 81; i++)
 		{
 			flag[i] = true;
 		}
-		srand(time(NULL));
 		int emptynum = rand() % (upper - lower + 1) + lower;
 		choose(flag, puzzle, unique, emptynum);
 		for (int j = 0; j < 81; j++)
 		{
-			result[i][j] = flag[j]? puzzle[j]:0;
+            result[i][j] = flag[j] ? puzzle[j] : 0;
 		}
 
 	}
