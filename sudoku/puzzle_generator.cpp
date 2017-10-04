@@ -4,22 +4,27 @@
 #include <random>
 #include <assert.h>
 #include <iostream>
+#include <string>
+// add time.h
+#include <time.h>
 
 using namespace std;
 
 int **generateMatrix;
-static dlx DLX;
+//为了能在测试中使用，这里把static去掉了，不知道有什么影响。。
+ dlx DLX;
+ //为了能修改count  这里把它放在外面了，否则下一次调用时count不是从0开始了
+static int matrixcount = 0;
 
 void ResDealing_toMatrix(const int *Res) {
-    static int count = 0;
-    generateMatrix[count] = new int[81];
+    generateMatrix[matrixcount] = new int[81];
     for (int i = 0; i < 81; i++) {
         int row = (Res[i] - 1) / 9 / 9;
         int col = (Res[i] - 1) / 9 % 9;
         int val = (Res[i] - 1) % 9 + 1;
-        generateMatrix[count][row * 9 + col] = val;
+        generateMatrix[matrixcount][row * 9 + col] = val;
     }
-    ++count;
+    ++matrixcount;
 }
 
 int computeDegree(int *Matrix) {
@@ -117,11 +122,8 @@ bool solve(int *puzzle, int *solution) {
         }
     DLX.addRestrict(rstr_p, rstr);
     generateMatrix = new int*;
-<<<<<<< HEAD
     //*generateMatrix = new int[81];
-=======
     // *generateMatrix = new int[81];
->>>>>>> aaf2a0c93df20cc0c224d03fb506529bb8d0f56f
     bool findout = DLX.find(1, ResDealing_toMatrix);
     DLX.clearRestrict();
     if (findout)
@@ -131,6 +133,93 @@ bool solve(int *puzzle, int *solution) {
     delete generateMatrix;
     return findout;
 }
+
+void getRandomArray(int num, int array[])
+{
+	int i = 0;
+	int temp[9] = { 1,2,3,4,5,6,7,8,9 };
+	while (num > 0)
+	{
+		//srand(time(0));
+		int index = rand() % (9-i);
+		array[i++] = temp[index];
+		for (int j = index; j < 9 - i; j++) 
+		{
+			temp[j] = temp[j + 1];
+		}
+		--num;
+	}
+}
+bool judgeResult(int  puzzle[], bool flag[], bool unique)
+{
+	int rstr[81][3] = { 0 };
+	int rstr_p = 0;
+	bool result = true;
+	for (int j = 0; j < 81; j++) {
+		if (flag[j]) {
+			rstr[rstr_p][0] = puzzle[j];
+			rstr[rstr_p][1] = j / 9 + 1;
+			rstr[rstr_p][2] = j % 9 + 1;
+			++rstr_p;
+		}
+	}
+	DLX.addRestrict(rstr_p, rstr);
+	if (unique)
+	{
+		result = !DLX.find(2, NULL);
+	}
+	DLX.clearRestrict();
+	return result;
+}
+/*must place before its caller??? why*/
+void choose(bool flag[], int puzzle[81], bool unique, int emptynum)
+//why here add int const puzzle[] will chongzai??
+{
+	//不要求唯一解，那么设置好相应数量的flag就好
+	if (!unique) {
+		for (int i = 0; i < 9; i++) {
+			int empty_line = i != 8 ? emptynum / (9 - i) : emptynum;
+			emptynum -= empty_line;
+			int *array = new int[empty_line];
+			getRandomArray(empty_line, array);
+			for (int j = 0; j < empty_line; j++) {
+				int pick = i * 9 + array[j] - 1;
+				flag[pick] = false;
+			}
+			delete []array;
+		}
+	}
+	//一个一个挖，每挖一次判断一下，挖错了就恢复栈然后重新挖
+	else {
+		int line = 0;
+		while (line < 9)
+		{
+			bool lineflag = false;
+			do {
+				int empty_line = line != 8 ? emptynum / (9 - line) : emptynum;
+				emptynum -= empty_line;
+				int *array = new int[empty_line];
+				getRandomArray(empty_line, array);
+				for (int j = 0; j < empty_line; j++) {
+					int pick = line * 9 + array[j] - 1;
+					flag[pick] = false;
+				}
+				if (judgeResult(puzzle, flag, unique)) {
+					lineflag = true;
+				}
+				else {
+					for (int j = 0; j < empty_line; j++) {
+						int pick = line * 9 + array[j] - 1;
+						flag[pick] = true;
+					}
+				}
+				delete[]array;
+			} while (!lineflag);
+			++line;
+		}
+	}
+}
+
 /*
 require: (number 1-10000) && (lower>=20 && upper<=55 &&	upper>=lower) && (result!=NULL)
 */
@@ -138,37 +227,20 @@ void generate(int number, int lower, int upper, bool unique, int  result[][81])
 {
 	//1.generate number sudo save to generateMatrix
 	generateMatrix = new int*[number];
+	matrixcount = 0;
 	DLX.find(number, ResDealing_toMatrix);
 	//2.for every matrix,generate sudo puzzle 
 	for (int i = 0; i < number; i++)
 	{
 		int *puzzle = generateMatrix[i];
 		bool flag[81];
-		//random notemptynum between 81-upper to 81-lower
-		int notemptynum = 81 - (rand() % (upper - lower) + lower);		
-		do {
-			//clear last find's some set
-			DLX.clearRestrict();								
-			int rstr[81][3] = { 0 };
-			int rstr_p = 0;
-			for (int i = 0; i < 81; i++)
-			{
-				flag[i] = false;
-			}
-			while(rstr_p<notemptynum)
-			{
-				int pick = rand() % 81;							
-				//random get a position not empty
-				if (!flag[pick]) {
-					rstr[rstr_p][0] = puzzle[pick];
-					rstr[rstr_p][1] = pick / 9 + 1;
-					rstr[rstr_p][2] = pick % 9 + 1;
-					++rstr_p;
-					flag[pick] = true;
-				}
-			}
-			DLX.addRestrict(rstr_p, rstr);
-		} while (unique && !DLX.find(2, NULL));
+		for (int i = 0; i < 81; i++)
+		{
+			flag[i] = true;
+		}
+		srand(time(NULL));
+		int emptynum = rand() % (upper - lower + 1) + lower;
+		choose(flag, puzzle, unique, emptynum);
 		for (int j = 0; j < 81; j++)
 		{
 			result[i][j] = flag[j]? puzzle[j]:0;
@@ -179,7 +251,4 @@ void generate(int number, int lower, int upper, bool unique, int  result[][81])
 		delete[]generateMatrix[i];
 	}
 	delete[]generateMatrix;
-
-
-
 }
