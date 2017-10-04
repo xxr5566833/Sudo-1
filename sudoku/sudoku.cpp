@@ -6,7 +6,7 @@
 #include <fstream>
 
 using namespace std;
-
+extern dlx DLX;
 void toFile(const int *Res) {
     static std::ofstream fout("sudoku.txt");
     char buf[19 * 9 + 2];

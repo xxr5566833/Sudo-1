@@ -37,6 +37,7 @@ void dlx::addRestrict(int n, int(*rstr)[3])
         pos_row = rstr[i][1];
         pos_col = rstr[i][2];
         result[_restrict_point++] = ((pos_row - 1) * 9 + pos_col - 1) * 9 + val;
+
     }
 }
 
@@ -56,11 +57,19 @@ void dlx::_deleteRestrict(int & stack_top, int & result_pos)
 
 bool dlx::find(int N, void ResDealing(const int *Res))
 {
+
     int stack_top = 0;
     int result_pos = _restrict_point;
     _deleteRestrict(stack_top, result_pos);
     int n = 0;
-    return _find(stack_top, result_pos, N, n, ResDealing);
+
+	if (!_find(stack_top, result_pos, N, n, ResDealing)) {
+		for (int i = stack_top - 1; i >= 0; i--)
+			if (stack[i] > 0)A->recoverrow(stack[i]);
+			else A->recovercol(-stack[i]);
+		return false;
+	}
+    return true;
 }
 
 bool dlx::_find(int stack_top, int result_pos, int N, int & n, void ResDealing(const int *Res)) {
@@ -88,6 +97,8 @@ bool dlx::_find(int stack_top, int result_pos, int N, int & n, void ResDealing(c
             min_col_index = p->col;
         }
     }
+
+
     for (Cross a = cols[min_col_index]->down; a != NULL; a = a->down) {
         result[result_pos++] = a->row;
         int new_stack_top = stack_top;
