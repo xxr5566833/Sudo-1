@@ -30,8 +30,9 @@ void toFile(const int *Res) {
 
 int main(int argc, char * args[]) {
     int result[20][81];
-    generate(10, 1, result);
-    generate(10, 1, result + 10);
+    // generate(10, 3, result);
+    // generate(10, 3, result + 10);
+    generate(20, 55, 55, true, result);
     for (int i = 0; i < 20; i++) {
         for (int j = 0; j < 81; j++) {
             if (result[i][j]) cout << result[i][j] << ' ';
