@@ -7,3 +7,4 @@ sudoku.exe -c N
 ```
 sudoku.ext -s puzzle_path
 ```
+上面那些命令行暂时不管用啦！
