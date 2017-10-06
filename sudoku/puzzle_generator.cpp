@@ -18,6 +18,18 @@ int **generateMatrix;
 static int matrixcount = 0;
 //为了能修改count  这里把它放在外面了，否则下一次调用时count不是从0开始了
 
+void print(bool flag[], int puzzle[])
+{
+	for (int i = 0; i < 9; i++)
+	{
+		for (int j = 0; j < 9; j++)
+		{
+			std::cout << " " << (flag[i * 9 + j] ? puzzle[i * 9 + j] : 0);
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
 void ResDealing_toMatrix(const int *Res) {
     generateMatrix[matrixcount] = new int[81];
     for (int i = 0; i < 81; i++) {
@@ -165,9 +177,9 @@ bool judgeResult(int  puzzle[], bool flag[], bool unique)
 	DLX.clearRestrict();
 	return result;
 }
-/*must place before its caller??? why*/
-void choose(bool flag[], int puzzle[81], bool unique, int emptynum)
-//why here add int const puzzle[] will chongzai??
+
+bool choose(bool flag[], int puzzle[81], bool unique, int emptynum)
+//这个函数是根据emptynum和unique，产生符合要求的数独游戏
 {
 	//不要求唯一解，那么设置好相应数量的flag就好
 	if (!unique) {
@@ -182,42 +194,88 @@ void choose(bool flag[], int puzzle[81], bool unique, int emptynum)
 			}
 			delete []array;
 		}
+		return true;
 	}
-	//一个一个挖，每挖一次判断一下，挖错了就恢复栈然后重新挖
+	/*
+	这里简要说明一下当要求唯一解时的思路：
+	1.一行一行挖空，每挖一行检测一下，如果挖完满足唯一解，那么在栈里存好①挖了哪些空②挖了几个空，然后继续挖下一行
+	2.如果发现这一行挖完不满足唯一解了，那么恢复栈，重新随机挖这一行
+	3.但是在实践中发现，前面几行挖的情况可能导致现在这一行不管怎么挖都无法满足唯一解，或者很难找到那种满足唯一解的情况，所以这里
+		就不能光重挖这一行了，当这一行重挖次数大于kmax_try，那么就把这一行和上一行都恢复了，然后重新挖上一行
+	4.但是这样还不行，现在是随机生成的数独终局，所以发现对于有的终局，很容易就能挖出一个唯一解的，但是对于有的终局，死活挖不出
+		唯一解的，所以这里又设置了count_iterate，每一次恢复这一行和上一行的栈，那么这个count就加1，当这个count比kmax_iterate
+		大时，就结束这次寻找，放弃这个终局（返回false），根据下一个随机的终局继续上述步骤。。
+
+	还有就是这里kmax_iterate和kmax_try这两个参数的调整影响着生成数独的速度，我觉得这里可以研究一个最优的组合
+	*/
 	else {
+		const int kmax_iterate = 5;
+		const int kmax_try = 5;
+		int *stack_array[9] = { 0 };
+		int stack_emptynum[9] = { 0 };
 		int line = 0;
+		int count_iterate = 0;
 		while (line < 9)
 		{
-			bool lineflag = false;
+			if (count_iterate > kmax_iterate)
+				return false;
+			int try_num = 0;
 			do {
+				try_num += 1;
 				int empty_line = line != 8 ? emptynum / (9 - line) : emptynum;
+				//std::cout << empty_line << std::endl;
 				emptynum -= empty_line;
 				int *array = new int[empty_line];
+				if (stack_array[line])
+					delete[]stack_array[line];
 				getRandomArray(empty_line, array);
+				//push
+				stack_emptynum[line] = empty_line;
+				stack_array[line] = array;
 				for (int j = 0; j < empty_line; j++) {
 					int pick = line * 9 + array[j] - 1;
 					flag[pick] = false;
 				}
 				if (judgeResult(puzzle, flag, unique)) {
-					lineflag = true;
+					break;
 				}
-				else {
+				if(try_num>kmax_try) {
+					count_iterate++;
 					for (int j = 0; j < empty_line; j++) {
 						int pick = line * 9 + array[j] - 1;
 						flag[pick] = true;
 					}
+					emptynum += empty_line;
+					--line;
+					for (int j = 0; j < stack_emptynum[line ]; j++)
+					{
+						int pick = line * 9 + stack_array[line][j] - 1;
+						flag[pick] = true;
+					}
+					emptynum += stack_emptynum[line];
+					--line;
+					break;
 				}
-				delete[]array;
-			} while (!lineflag);
+				else
+				{
+					for (int j = 0; j < empty_line; j++) {
+						int pick = line * 9 + array[j] - 1;
+						flag[pick] = true;
+					}
+					emptynum += empty_line;
+				}
+			} while (1);
 			++line;
+			//print(flag, puzzle);
 		}
+		return true;
 	}
 }
 
 /*
 require: (number 1-10000) && (lower>=20 && upper<=55 &&	upper>=lower) && (result!=NULL)
 */
-void generate(int number, int lower, int upper, bool unique, int  result[][81])
+void generate(int number, int lower, int upper, bool unique, int  **result)
 {
 	//1.generate number sudo save to generateMatrix
 	generateMatrix = new int*[number];
@@ -235,7 +293,15 @@ void generate(int number, int lower, int upper, bool unique, int  result[][81])
 			flag[i] = true;
 		}
 		int emptynum = rand() % (upper - lower + 1) + lower;
-		choose(flag, puzzle, unique, emptynum);
+		//如果这个终局一直挖不出来，那么就选择下一个终局来挖，这里如果失败的话，需要恢复i和matrixcount
+		if (!choose(flag, puzzle, unique, emptynum))
+		{
+			--i;
+			--matrixcount;
+			continue;
+		}
+		//print(flag, puzzle);
+		//std::cout << i << std::endl;
 		for (int j = 0; j < 81; j++)
 		{
             result[i][j] = flag[j] ? puzzle[j] : 0;

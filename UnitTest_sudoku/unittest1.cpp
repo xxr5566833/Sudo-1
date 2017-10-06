@@ -70,8 +70,13 @@ namespace UnitTest_sudoku
 				bool unique = j%2==0;
 				int upper = uppers[j];
 				int lower = lowers[j];
-				int number = 3000;
-				int result[3000][81] = { 0 };
+				int number = 1000;
+				//这里可以把数字调小点，如果时间慢的话
+				int **result = new int*[number] {0};
+				for (int i = 0; i < number; i++)
+				{
+					result[i] = new int[81]{ 0 };
+				}
 
 			
 				generate(number,lower,upper,unique,result);
@@ -89,12 +94,15 @@ namespace UnitTest_sudoku
 						}
 					}
 					DLX.addRestrict(rstr_p, rstr);
+					//1.挖空数量是否足够
+					Assert::AreEqual(rstr_p>=(81-upper)&&rstr_p<=(81-lower),true);
+					//2.是否满足唯一解要求
 					if (!unique) {
-						Assert::AreEqual(DLX.find(1, NULL), true);
+						Assert::AreEqual(DLX.find(1,false, NULL), true);
 					}
 					else
 					{
-						Assert::AreEqual(DLX.find(2, NULL), false);
+						Assert::AreEqual(DLX.find(2,false, NULL), false);
 					}
 					DLX.clearRestrict();
 				}
